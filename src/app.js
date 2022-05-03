@@ -2,8 +2,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const swaggerJsDoc = require('swagger-jsdoc');
 const swaggerUI = require('swagger-ui-express');
+const logger = require('./logger');
 
 const app = express();
+
 const jsonParser = bodyParser.json();
 
 const opts = {
@@ -50,6 +52,7 @@ module.exports = (db) => {
 
         if (startLatitude < -90 || startLatitude > 90
             || startLongitude < -180 || startLongitude > 180) {
+            logger.error('[VALIDATION_ERROR] invalid starting location');
             return res.send({
                 error_code: 'VALIDATION_ERROR',
                 message: 'Start latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively'
@@ -58,6 +61,7 @@ module.exports = (db) => {
 
         if (endLatitude < -90 || endLatitude > 90
             || endLongitude < -180 || endLongitude > 180) {
+            logger.error('[VALIDATION_ERROR] invalid ending location');
             return res.send({
                 error_code: 'VALIDATION_ERROR',
                 message: 'End latitude and longitude must be between -90 - 90 and -180 to 180 degrees respectively'
@@ -65,6 +69,7 @@ module.exports = (db) => {
         }
 
         if (typeof riderName !== 'string' || riderName.length < 1) {
+            logger.error('[VALIDATION_ERROR] empty rider name');
             return res.send({
                 error_code: 'VALIDATION_ERROR',
                 message: 'Rider name must be a non empty string'
@@ -72,21 +77,24 @@ module.exports = (db) => {
         }
 
         if (typeof driverName !== 'string' || driverName.length < 1) {
+            logger.error('[VALIDATION_ERROR] empty driver name');
             return res.send({
                 error_code: 'VALIDATION_ERROR',
-                message: 'Rider name must be a non empty string'
+                message: 'Driver name must be a non empty string'
             });
         }
 
         if (typeof driverVehicle !== 'string' || driverVehicle.length < 1) {
+            logger.error('[VALIDATION_ERROR] empty vehicle name');
             return res.send({
                 error_code: 'VALIDATION_ERROR',
-                message: 'Rider name must be a non empty string'
+                message: 'Vehicle name must be a non empty string'
             });
         }
 
         return db.run('INSERT INTO Rides(startLat, startLong, endLat, endLong, riderName, driverName, driverVehicle) VALUES (?, ?, ?, ?, ?, ?, ?)', values, function (errIns) {
             if (errIns) {
+                logger.error('[SERVER_ERROR] Unknown error');
                 return res.send({
                     error_code: 'SERVER_ERROR',
                     message: 'Unknown error'
@@ -95,6 +103,7 @@ module.exports = (db) => {
 
             return db.all('SELECT * FROM Rides WHERE rideID = ?', this.lastID, (errSel, rows) => {
                 if (errSel) {
+                    logger.error('[SERVER_ERROR] Unknown error');
                     return res.send({
                         error_code: 'SERVER_ERROR',
                         message: 'Unknown error'
@@ -109,6 +118,7 @@ module.exports = (db) => {
     app.get('/rides', (req, res) => {
         db.all('SELECT * FROM Rides', (err, rows) => {
             if (err) {
+                logger.error('[SERVER_ERROR] Unknown error');
                 return res.send({
                     error_code: 'SERVER_ERROR',
                     message: 'Unknown error'
@@ -116,6 +126,7 @@ module.exports = (db) => {
             }
 
             if (rows.length === 0) {
+                logger.error('[RIDES_NOT_FOUND_ERROR] Rides table is empty');
                 return res.send({
                     error_code: 'RIDES_NOT_FOUND_ERROR',
                     message: 'Could not find any rides'
@@ -129,6 +140,7 @@ module.exports = (db) => {
     app.get('/rides/:id', (req, res) => {
         db.all(`SELECT * FROM Rides WHERE rideID='${req.params.id}'`, (err, rows) => {
             if (err) {
+                logger.error('[SERVER_ERROR] Unknown error');
                 return res.send({
                     error_code: 'SERVER_ERROR',
                     message: 'Unknown error'
@@ -136,6 +148,7 @@ module.exports = (db) => {
             }
 
             if (rows.length === 0) {
+                logger.error(`[RIDES_NOT_FOUND_ERROR] record for rideID '${req.params.id}' doesn't exist`);
                 return res.send({
                     error_code: 'RIDES_NOT_FOUND_ERROR',
                     message: 'Could not find any rides'
