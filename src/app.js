@@ -4,9 +4,32 @@ const express = require('express');
 const app = express();
 
 const bodyParser = require('body-parser');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUI = require('swagger-ui-express');
+
 const jsonParser = bodyParser.json();
 
+const opts = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Rides API',
+            version: '1.0.0',
+            description: 'An API to store and maintain rides.',
+        },
+        servers: [
+            {
+                url: 'http://localhost:8010',
+            },
+        ],
+    },
+    apis: ['./src/app.js'],
+};
+
+const specs = swaggerJsDoc(opts);
 module.exports = (db) => {
+    app.use('/docs', swaggerUI.serve, swaggerUI.setup(specs));
+
     app.get('/health', (req, res) => res.send('Healthy'));
 
     app.post('/rides', jsonParser, (req, res) => {
@@ -118,3 +141,139 @@ module.exports = (db) => {
 
     return app;
 };
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *      RideGet:
+ *          type: object
+ *          properties:
+ *              riderID:
+ *                  type: integer
+ *                  description: auto generated unique id
+ *              startLat:
+ *                  type: number
+ *                  description: starting lattitude
+ *              startLong:
+ *                  type: number
+ *                  description: starting longitude
+ *              endLat:
+ *                  type: number
+ *                  description: ending lattitude
+ *              endLong:
+ *                  type: number
+ *                  description: ending longitude
+ *              riderName:
+ *                  type: string
+ *                  description: name of the rider
+ *              driverName:
+ *                  type: string
+ *                  description: name of the driver
+ *              driverVehicle:
+ *                  type: string
+ *                  description: vehicle used
+ *              created:
+ *                  type: string
+ *                  format: date-time
+ *                  description: time the ride was created
+ *      RidePost:
+ *          type: object
+ *          required:
+ *              - start_lat
+ *              - start_long
+ *              - end_lat
+ *              - end_long
+ *              - rider_name
+ *              - driver_name
+ *              - driver_vehicle
+ *          properties:
+ *              start_lat:
+ *                  type: number
+ *                  description: starting lattitude (Must be a value from -90 to 90)
+ *              start_long:
+ *                  type: number
+ *                  description: starting longitude (Must be a value from -180 to 180)
+ *              end_lat:
+ *                  type: number
+ *                  description: ending lattitude (Must be a value from -90 to 90)
+ *              end_long:
+ *                  type: number
+ *                  description: ending longitude (Must be a value from -180 to 180)
+ *              rider_name:
+ *                  type: string
+ *                  description: name of the rider
+ *              driver_name:
+ *                  type: string
+ *                  description: name of the driver
+ *              driver_vehicle:
+ *                  type: string
+ *                  description: vehicle used
+ */
+
+/**
+ * @swagger
+ * tags:
+ *  name: Rides
+ *  description: The Rides API
+ */
+
+/**
+ * @swagger
+ * /rides:
+ *  get:
+ *      summary: Returns the list of all the rides
+ *      tags: [Rides]
+ *      responses:
+ *          200:
+ *              description: list of the rides
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          type: array
+ *                          items:
+ *                              $ref: '#/components/schemas/RideGet'
+ */
+
+/**
+ * @swagger
+ * /rides/{id}:
+ *  get:
+ *      summary: Return ride by id
+ *      tags: [Rides]
+ *      parameters:
+ *          -   in: path
+ *              name: id
+ *              schema:
+ *                  type: string
+ *              required: true
+ *              description: The ride id
+ *      responses:
+ *          200:
+ *              description: The details of the ride
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/RideGet'
+ */
+
+/**
+ * @swagger
+ * /rides:
+ *  post:
+ *      summary: Enter a new ride
+ *      tags: [Rides]
+ *      requestBody:
+ *          required: true
+ *          content:
+ *              application/json:
+ *                  schema:
+ *                      $ref: '#/components/schemas/RidePost'
+ *      responses:
+ *          200:
+ *              description: The details of the ride are inserted
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          $ref: '#/components/schemas/RideGet'
+ */
