@@ -93,7 +93,7 @@ describe('API tests', () => {
             request(app)
                 .get('/health')
                 .expect('Content-Type', /text/)
-                .expect(404, done);
+                .expect(200, done);
         });
     });
 
