@@ -116,7 +116,25 @@ module.exports = (db) => {
     });
 
     app.get('/rides', (req, res) => {
-        db.all('SELECT * FROM Rides', (err, rows) => {
+        let page = parseInt(req.query.page, 10);
+        let size = parseInt(req.query.per_page, 10);
+
+        if (Object.keys(req.query).length > 0) {
+            if (page <= 0 || size <= 0 || Number.isNaN(page) || Number.isNaN(size)) {
+                logger.error('[QUERY_ERROR] Invalid query provided in URL');
+                return res.send({
+                    error_code: 'QUERY_ERROR',
+                    message: 'Invalid page / per_page, should both starts with 1'
+                });
+            }
+        } else { page = 1; size = 10; }
+
+        const query = {
+            skip: size * (page - 1),
+            limit: size
+        };
+
+        return db.all(`SELECT * FROM Rides LIMIT ${query.skip}, ${query.limit}`, (err, rows) => {
             if (err) {
                 logger.error('[SERVER_ERROR] Unknown error');
                 return res.send({
