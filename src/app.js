@@ -116,7 +116,28 @@ module.exports = (db) => {
     });
 
     app.get('/rides', (req, res) => {
-        db.all('SELECT * FROM Rides', (err, rows) => {
+        const page = parseInt(req.query.page, 10);
+        const size = parseInt(req.query.per_page, 10);
+        let sql;
+
+        if (Object.keys(req.query).length > 0) {
+            if (page <= 0 || size <= 0 || Number.isNaN(page) || Number.isNaN(size)) {
+                logger.error('[QUERY_ERROR] Invalid query provided in URL');
+                return res.send({
+                    error_code: 'QUERY_ERROR',
+                    message: 'Invalid page / per_page, should both starts with 1'
+                });
+            }
+
+            const query = {
+                skip: size * (page - 1),
+                limit: size
+            };
+
+            sql = `SELECT * FROM Rides LIMIT ${query.skip}, ${query.limit}`;
+        } else { sql = 'SELECT * FROM Rides'; }
+
+        return db.all(sql, (err, rows) => {
             if (err) {
                 logger.error('[SERVER_ERROR] Unknown error');
                 return res.send({
@@ -275,6 +296,36 @@ module.exports = (db) => {
  *                  application/json:
  *                      schema:
  *                          $ref: '#/components/schemas/RideGet'
+ */
+
+/**
+ * @swagger
+ * /rides?page={pageNum}&per_page={pageSize}:
+ *  get:
+ *      summary: Returns a paginated list of rides
+ *      tags: [Rides]
+ *      parameters:
+ *          -   in: path
+ *              name: pageNum
+ *              schema:
+ *                  type: string
+ *              required: true
+ *              description: The page to be displayed (must be greater than zero)
+ *          -   in: path
+ *              name: pageSize
+ *              schema:
+ *                  type: string
+ *              required: true
+ *              description: The number of rides per page (must be greater than zero)
+ *      responses:
+ *          200:
+ *              description: The list of rides in the specified page
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          type: array
+ *                          items:
+ *                              $ref: '#/components/schemas/RideGet'
  */
 
 /**
