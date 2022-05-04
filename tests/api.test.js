@@ -185,6 +185,7 @@ describe('API tests', () => {
         });
     });
 
+    // covers pagination result of the inserter rides
     describe(`GET /rides?page=${validRideOpts.page}&per_page=${validRideOpts.pageSize}`, () => {
         it('should return paginated rides', (done) => {
             const { totalRides, page, pageSize } = validRideOpts;
@@ -201,6 +202,7 @@ describe('API tests', () => {
         });
     });
 
+    // covers pagination query error
     describe('GET /rides?page=0&per_page=0', () => {
         it('should return a query error', (done) => {
             request(app)
