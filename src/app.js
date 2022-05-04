@@ -116,8 +116,9 @@ module.exports = (db) => {
     });
 
     app.get('/rides', (req, res) => {
-        let page = parseInt(req.query.page, 10);
-        let size = parseInt(req.query.per_page, 10);
+        const page = parseInt(req.query.page, 10);
+        const size = parseInt(req.query.per_page, 10);
+        let sql;
 
         if (Object.keys(req.query).length > 0) {
             if (page <= 0 || size <= 0 || Number.isNaN(page) || Number.isNaN(size)) {
@@ -127,14 +128,16 @@ module.exports = (db) => {
                     message: 'Invalid page / per_page, should both starts with 1'
                 });
             }
-        } else { page = 1; size = 10; }
 
-        const query = {
-            skip: size * (page - 1),
-            limit: size
-        };
+            const query = {
+                skip: size * (page - 1),
+                limit: size
+            };
 
-        return db.all(`SELECT * FROM Rides LIMIT ${query.skip}, ${query.limit}`, (err, rows) => {
+            sql = `SELECT * FROM Rides LIMIT ${query.skip}, ${query.limit}`;
+        } else { sql = 'SELECT * FROM Rides'; }
+
+        return db.all(sql, (err, rows) => {
             if (err) {
                 logger.error('[SERVER_ERROR] Unknown error');
                 return res.send({

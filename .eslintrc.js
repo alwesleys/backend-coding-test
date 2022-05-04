@@ -18,6 +18,7 @@ module.exports = {
         indent: ['error', 4],
         'linebreak-style': 0,
         'comma-dangle': ['error', 'only-multiline'],
-        'func-names': 0
+        'func-names': 0,
+        'no-plusplus': 0
     },
 };
