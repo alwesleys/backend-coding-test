@@ -300,6 +300,36 @@ module.exports = (db) => {
 
 /**
  * @swagger
+ * /rides?page={pageNum}&per_page={pageSize}:
+ *  get:
+ *      summary: Returns a paginated list of rides
+ *      tags: [Rides]
+ *      parameters:
+ *          -   in: path
+ *              name: pageNum
+ *              schema:
+ *                  type: string
+ *              required: true
+ *              description: The page to be displayed (must be greater than zero)
+ *          -   in: path
+ *              name: pageSize
+ *              schema:
+ *                  type: string
+ *              required: true
+ *              description: The number of rides per page (must be greater than zero)
+ *      responses:
+ *          200:
+ *              description: The list of rides in the specified page
+ *              content:
+ *                  application/json:
+ *                      schema:
+ *                          type: array
+ *                          items:
+ *                              $ref: '#/components/schemas/RideGet'
+ */
+
+/**
+ * @swagger
  * /rides:
  *  post:
  *      summary: Enter a new ride
