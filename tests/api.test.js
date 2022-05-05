@@ -1,10 +1,22 @@
 const request = require('supertest');
 const sqlite3 = require('sqlite3').verbose();
+const { open } = require('sqlite');
 
-const db = new sqlite3.Database(':memory:');
-
-const app = require('../src/app')(db);
 const buildSchemas = require('../src/schemas');
+
+const app = require('../src/app')();
+
+let db;
+(async () => {
+    db = await open({
+        filename: './rides.db',
+        driver: sqlite3.cached.Database
+    });
+
+    // clear db
+    await db.run('DROP TABLE IF EXISTS Rides');
+    await buildSchemas(db);
+})();
 
 // modify for custom valid tests
 const validRideOpts = {
@@ -75,18 +87,6 @@ const invalidTestRides = [
 ];
 
 describe('API tests', () => {
-    before((done) => {
-        db.serialize((err) => {
-            if (err) {
-                return done(err);
-            }
-
-            buildSchemas(db);
-
-            return done();
-        });
-    });
-
     describe('GET /health', () => {
         it('should return health', (done) => {
             request(app)
@@ -134,7 +134,7 @@ describe('API tests', () => {
                     .expect('Content-Type', /json/)
                     .expect(200)
                     .then((res) => {
-                        if (res.body[0].riderName === validRideOpts.ride.rider_name) return done();
+                        if (res.body.riderName === validRideOpts.ride.rider_name) return done();
                         throw Error('POST error: Incorrect returned record');
                     })
                     .catch((err) => done(err));
@@ -154,7 +154,6 @@ describe('API tests', () => {
 
     // covers getting the inserted record based on the id
     for (let i = 0; i < validRideOpts.totalRides; i++) {
-        validRideOpts.ride.rider_name += `${i + 1}`;
         describe(`GET /rides/${i + 1}`, () => {
             it('should return specific ride', (done) => {
                 request(app)
@@ -162,7 +161,7 @@ describe('API tests', () => {
                     .expect('Content-Type', /json/)
                     .expect(200)
                     .then((res) => {
-                        if (res.body[0].riderName === validRideOpts.ride.rider_name) return done();
+                        if (res.body.riderName === validRideOpts.ride.rider_name) return done();
                         throw Error('GET error: Incorrect returned record');
                     })
                     .catch((err) => done(err));
