@@ -134,7 +134,11 @@ let db;
 exports.listAll = async (req, res) => {
     const page = parseInt(req.query.page, 10);
     const size = parseInt(req.query.per_page, 10);
-    let sql;
+
+    const query = {
+        skip: 0,
+        limit: 0
+    };
 
     if (Object.keys(req.query).length > 0) {
         if (page <= 0 || size <= 0 || Number.isNaN(page) || Number.isNaN(size)) {
@@ -145,16 +149,17 @@ exports.listAll = async (req, res) => {
             });
         }
 
-        const query = {
-            skip: size * (page - 1),
-            limit: size
-        };
-
-        sql = `SELECT * FROM Rides LIMIT ${query.skip}, ${query.limit}`;
-    } else { sql = 'SELECT * FROM Rides'; }
+        query.skip = size * (page - 1);
+        query.limit = size;
+    }
 
     try {
-        const result = await db.all(sql);
+        let result;
+        if (query.limit !== 0) {
+            result = await db.all('SELECT * FROM Rides LIMIT ?, ?', query.skip, query.limit);
+        } else {
+            result = await db.all('SELECT * FROM Rides');
+        }
 
         if (result.length === 0) {
             logger.error('[RIDES_NOT_FOUND_ERROR] Rides table is empty');
@@ -196,14 +201,23 @@ exports.listAll = async (req, res) => {
  *                          $ref: '#/components/schemas/RideGet'
  */
 
-// GET specific ride by ID handler
+//
 exports.getByID = async (req, res) => {
     try {
-        const sql = `SELECT * FROM Rides WHERE rideID='${req.params.id}'`;
-        const result = await db.all(sql);
+        const id = parseInt(req.params.id, 10);
+        if (id <= 0 || Number.isNaN(id)) {
+            logger.error('[QUERY_ERROR] Invalid query provided in URL');
+            return res.send({
+                error_code: 'QUERY_ERROR',
+                message: 'Invalid id, should starts with 1'
+            });
+        }
+
+        const sql = 'SELECT * FROM Rides WHERE rideID=?';
+        const result = await db.all(sql, id);
 
         if (result.length === 0) {
-            logger.error(`[RIDES_NOT_FOUND_ERROR] record for rideID '${req.params.id}' doesn't exist`);
+            logger.error(`[RIDES_NOT_FOUND_ERROR] record for rideID '${id}' doesn't exist`);
             return res.send({
                 error_code: 'RIDES_NOT_FOUND_ERROR',
                 message: 'Could not find any rides'
@@ -240,7 +254,7 @@ exports.getByID = async (req, res) => {
  *                          $ref: '#/components/schemas/RideGet'
  */
 
-// POST new ride handler
+// POST for new ride handler
 exports.add = async (req, res) => {
     const startLatitude = Number(req.body.start_lat);
     const startLongitude = Number(req.body.start_long);
