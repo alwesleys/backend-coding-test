@@ -1,0 +1,32 @@
+config:
+  target: "http://localhost:8010"
+  phases:
+    - duration: 30
+      arrivalRate: 100
+      name: Load testing
+  payload:
+    path: "rides.csv"
+    fields:
+      - start_lat
+      - start_long
+      - end_lat
+      - end_long
+      - rider_name
+      - driver_name
+      - driver_vehicle
+
+scenarios:
+  - name: "get tests"
+    flow:
+      - post:
+          url: "/rides"
+          json:
+            start_lat: "{{ start_lat }}"
+            start_long: "{{ start_long }}"
+            end_lat: "{{ end_lat }}"
+            end_long: "{{ end_long }}"
+            rider_name: "{{ rider_name }}"
+            driver_name: "{{ driver_name }}"
+            driver_vehicle: "{{ driver_vehicle }}"
+      - get:
+          url: "/rides"
